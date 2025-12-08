@@ -1,0 +1,25 @@
+# Python
+backend/venv/
+backend/.env
+backend/__pycache__/
+backend/*.pyc
+
+# FAISS / embeddings / cache
+backend/embeddings/
+backend/faiss_store/
+backend/embeddings/faiss_index/
+backend/faiss_index/
+faiss_store/
+*.faiss
+*.pkl
+
+# Node
+frontend/node_modules/
+frontend/.env
+dist/
+.DS_Store
+
+# IDE/editor
+.vscode/
+.idea/
+*.log
