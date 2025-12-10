@@ -2,24 +2,24 @@ from fastapi import APIRouter
 from bson import ObjectId
 from app.models.job_model import JobCreate
 from app.db.jobs import jobs_collection
-from app.utils.matcher import generate_embedding, add_job_to_faiss
+from app.utils.matcher import add_job_to_faiss
 
 router = APIRouter()
 
 @router.post("/post-job")
 async def post_job(job: JobCreate):
     try:
-        job_dict = job.dict()
+        job_data = job.dict()
         # insert in MongoDB
-        res = await jobs_collection.insert_one(job_dict)
+        res = await jobs_collection.insert_one(job_data)
         job_id = str(res.inserted_id)
 
         # metadata dict
         metadata = {
-            "job_id": job_id,
-            "title": job.title,
-            "company": job.company
-        }
+        "job_id": job_id,
+        "title": job_data["title"],
+        "company": job_data["company"]
+    }
 
         # add to FAISS (text + metadata)
         # use combined text to create better embedding

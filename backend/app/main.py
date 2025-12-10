@@ -15,8 +15,11 @@ from app.utils.matcher import match_resume_with_jobs
 from app.utils.db import jobs_collection
 from app.utils.embeddings import add_job_to_faiss
 from bson import ObjectId
+from app.routes.resume_routes import router as resume_router
+from app.routes.match_routes import router as match_router
+from app.routes.job_routes import router as job_router
 
-
+from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -28,7 +31,17 @@ FAISS_DIR = Path(
 HF_MODEL = os.getenv("HF_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
 app = FastAPI(title="FAISS Retriever API")
+app.include_router(resume_router, prefix="/resume")
+app.include_router(match_router , prefix="/match")
+app.include_router(job_router, prefix="/job")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # allow all for development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 vectorstore = None
 
 
@@ -99,31 +112,31 @@ def retrieve(q: str = Query(..., min_length=1), k: int = Query(5, ge=1, le=50)):
     return output
 
 
-@app.post("/upload-resume")
-async def upload_resume(file: UploadFile = File(...)):
-    try:
-        text = extract_resume_text(file)
-        # print(text)
-        return {"status": "success", "text": text}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+# @app.post("/upload-resume")
+# async def upload_resume(file: UploadFile = File(...)):
+#     try:
+#         text = extract_resume_text(file)
+#         # print(text)
+#         return {"status": "success", "text": text}
+#     except Exception as e:
+#         return {"status": "error", "message": str(e)}
 
-class AnalyzeRequest(BaseModel):
+# class AnalyzeRequest(BaseModel):
     resume_text: str
 
-@app.post("/analyze-resume")
-async def analyze_resume(payload: AnalyzeRequest):
-    analysis = analyze_resume_text(payload.resume_text)
-    return {"analysis": analysis}
+# @app.post("/analyze-resume")
+# async def analyze_resume(payload: AnalyzeRequest):
+#     analysis = analyze_resume_text(payload.resume_text)
+#     return {"analysis": analysis}
 
-class MatchRequest(BaseModel):
-    resume_text: str
-    k: int = 5
+# class MatchRequest(BaseModel):
+#     resume_text: str
+#     k: int = 5
 
-@app.post("/match-jobs")
-async def match_jobs_api(payload: MatchRequest):
-    matches = match_resume_with_jobs(payload.resume_text, payload.k)
-    return {"matches": matches}
+# @app.post("/match-jobs")
+# async def match_jobs_api(payload: MatchRequest):
+#     matches = match_resume_with_jobs(payload.resume_text, payload.k)
+#     return {"matches": matches}
 
 
 @app.get("/health")
@@ -132,36 +145,36 @@ def health():
 
 
 
-class JobPost(BaseModel):
-    title: str
-    company: str
-    location: str | None = None
-    description: str
+# class JobPost(BaseModel):
+#     title: str
+#     company: str
+#     location: str | None = None
+#     description: str
 
-@app.post("/post-job")
-async def post_job(payload: JobPost):
+# @app.post("/post-job")
+# async def post_job(payload: JobPost):
 
-    job_data = payload.dict()
+#     job_data = payload.dict()
 
-    result = jobs_collection.insert_one(job_data)
-    print("Result JobCOllection" ,job_data)
-    job_id = str(result.inserted_id)
+#     result = jobs_collection.insert_one(job_data)
+#     print("Result JobCOllection" ,job_data)
+#     job_id = str(result.inserted_id)
 
-    # build metadata as a dict (required)
-    metadata = {
-        "job_id": job_id,
-        "title": job_data["title"],
-        "company": job_data["company"]
-    }
+#     # build metadata as a dict (required)
+#     metadata = {
+#         "job_id": job_id,
+#         "title": job_data["title"],
+#         "company": job_data["company"]
+#     }
 
-    # pass the job description + metadata dict to FAISS
-    add_job_to_faiss(job_data["description"], metadata)
+#     # pass the job description + metadata dict to FAISS
+#     add_job_to_faiss(job_data["description"], metadata)
 
-    return {
-        "status": "success",
-        "job_id": job_id,
-        "message": "Job posted and added to FAISS index."
-    }
+#     return {
+#         "status": "success",
+#         "job_id": job_id,
+#         "message": "Job posted and added to FAISS index."
+#     }
 
 
 @app.get("/debug/faiss")
