@@ -1,12 +1,32 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import Navbar from "../../components/navbar/Navbar";
+import AnalysisPlaceHolder from "../../components/Pages/AnalysisPlaceHolder";
 
 export default function AnalysisPage() {
   const { state } = useLocation();
 
   const fileName = state?.fileName ?? "uploaded_resume";
-  const analysis = state?.analysis; // 👈 fetch analysis sent from navigation
+  const analysisRaw = state?.analysis;
+
+  let analysisData = null;
+
+try {
+  if (analysisRaw) {
+    // Extract clean JSON block between ```json and ```
+    const jsonBlockMatch = analysisRaw.match(/```json([\s\S]*?)```/);
+
+    if (jsonBlockMatch) {
+      const jsonText = jsonBlockMatch[1].trim();
+      analysisData = JSON.parse(jsonText);
+    } else {
+      console.log("No JSON block found in analysis");
+    }
+  }
+} catch (err) {
+  console.log("Error parsing analysis:", err);
+}
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -21,7 +41,7 @@ export default function AnalysisPage() {
           <p className="mt-1 text-gray-500 text-sm">File: {fileName}</p>
 
           {/* -------------------- NO ANALYSIS AVAILABLE -------------------- */}
-          {!analysis ? (
+          {!analysisData ? (
             <div className="mt-6">
               <p className="text-gray-600">
                 No analysis found. Please upload your resume again.
@@ -35,9 +55,38 @@ export default function AnalysisPage() {
           ) : (
             /* -------------------- ANALYSIS DISPLAY -------------------- */
             <div className="mt-8 space-y-6">
-              <pre className="mt-6 whitespace-pre-wrap text-gray-700 text-lg leading-relaxed">
-            {analysis}
-          </pre>
+
+              <AnalysisPlaceHolder
+                title="Skills"
+                data={analysisData.skills}
+              />
+
+              <AnalysisPlaceHolder
+                title="Strengths"
+                data={analysisData.strengths}
+              />
+
+              <AnalysisPlaceHolder
+                title="Weaknesses"
+                data={analysisData.weaknesses}
+              />
+
+              <AnalysisPlaceHolder
+                title="Improvement Suggestions"
+                data={analysisData.improvement_suggestions}
+              />
+
+              <AnalysisPlaceHolder
+                title="Predicted Job Titles"
+                data={analysisData.predicted_job_titles}
+              />
+
+              <AnalysisPlaceHolder
+                title="Summary"
+                data={analysisData.summary}
+                isList={false}
+              />
+
             </div>
           )}
         </div>
